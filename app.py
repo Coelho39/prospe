@@ -5,8 +5,12 @@ import streamlit as st
 from datetime import datetime
 from io import BytesIO
 
+# Supondo que seus arquivos estão em uma pasta 'utils'
 from utils.serp_client import SerpAPIClient
-from utils.data_enrichment import DataEnricher
+from utils.data_enrichment import DataEnricher 
+
+# Nota: O arquivo minin_data.py parece ser um duplicado de data_enrichment.py
+# Se for o caso, pode ser removido para simplificar o projeto.
 from utils.mining_data import MINING_SEARCH_TERMS
 
 # ==================== CONFIGURAÇÃO DA PÁGINA ====================
@@ -115,7 +119,7 @@ def main():
     
     with col2:
         if st.session_state.enriched_results:
-            if st.button("🔄 Recarregar Dados"):
+            if st.button("🔄 Recarregar Dados"): # Nome mais claro
                 st.rerun()
     
     with col3:
@@ -228,6 +232,7 @@ def remove_duplicates(results):
     
     for result in results:
         name = result.get('name', '').strip().lower()
+        # Usa os primeiros 15 caracteres do endereço para evitar pequenas variações
         address = result.get('address', '').strip().lower()[:15]
         key = f"{name}|{address}"
         
@@ -331,22 +336,17 @@ def display_export_options():
         with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Mineradoras')
             
-            # Calcula as métricas de forma segura, verificando se a coluna existe
+            # --- CORREÇÃO APLICADA AQUI ---
             phone_series = df.get('phone', pd.Series(dtype='object'))
             website_series = df.get('website', pd.Series(dtype='object'))
-
-            if 'email_oficial' in df.columns:
-                email_count = len(df[df['email_oficial'].notna() & (df['email_oficial'] != '')])
-            else:
-                email_count = 0
-
+            
             summary_data = {
                 'Métrica': ['Total de Empresas', 'Com Telefone', 'Com Website', 'Com Email'],
                 'Valor': [
                     len(df),
                     len(df[phone_series.notna() & (phone_series != '')]),
                     len(df[website_series.notna() & (website_series != '')]),
-                    email_count
+                    len(df[df.get('email_oficial', pd.Series(dtype='object')).notna() & (df.get('email_oficial', pd.Series(dtype='object')) != '')])
                 ]
             }
             pd.DataFrame(summary_data).to_excel(writer, index=False, sheet_name='Resumo')
